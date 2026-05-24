@@ -1,0 +1,41 @@
+name: "CI"
+description: "Run tests & build"
+author: "szhsin"
+
+inputs:
+  node-version:
+    description: "Node.js version to use"
+    default: "24"
+  pipeline-command:
+    description: "Command to run the repo pipeline"
+    default: "npm run build"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: ${{ inputs['node-version'] }}
+
+    - name: Install dependencies
+      run: |
+        npm ci &
+        ([ -d website ] && npm ci --prefix website) &
+        ([ -d examples ] && npm ci --prefix examples) &
+        ([ -d example ] && npm ci --prefix example) &
+        wait
+      shell: bash
+
+    - name: Run Tests
+      id: tests
+      run: npm test
+      shell: bash
+
+    - name: Run pipeline
+      id: pipeline
+      run: ${{ inputs['pipeline-command'] }}
+      shell: bash
